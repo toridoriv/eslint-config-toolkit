@@ -4,21 +4,11 @@
   "description": "Boilerplate for library written in TypeScript.",
   "type": "module",
   "license": "GPL-3.0-only",
-  "main": "./lib/main.cjs",
-  "module": "./lib/main.js",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./lib/main.d.ts",
-        "default": "./lib/main.js"
-      },
-      "require": {
-        "types": "./lib/main.d.cts",
-        "default": "./lib/main.cjs"
-      }
-    }
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "bin": {
+    "setup-linting": "./bin/setup-linting.js"
   },
-  "types": "./lib/main.d.ts",
   "author": {
     "name": "Victoria Rodriguez",
     "email": "vrodriguezfe@icloud.com",
@@ -45,7 +35,7 @@
   },
   "scripts": {
     "chmod": "find sbin -type f -not -name '*utils*' -not -name '*helpers*' -exec chmod +x {} \\;",
-    "prebuild": "rm -rf lib",
+    "prebuild": "rm -rf lib && rm -rf bin",
     "build": "tsup",
     "test": "vitest",
     "test:coverage": "npm run test -- --coverage"
