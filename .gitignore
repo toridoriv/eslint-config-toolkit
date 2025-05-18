@@ -22,3 +22,5 @@ var/tmp
 # 💬 Build
 lib
 *.tgz
+bin
+!source/bin
