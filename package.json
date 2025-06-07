@@ -38,11 +38,13 @@
     "prebuild": "rm -rf lib && rm -rf bin",
     "build": "tsup",
     "test": "vitest",
-    "test:coverage": "npm run test -- --coverage"
+    "test:coverage": "npm run test -- --coverage",
+    "deps:ignore": "scripty"
   },
   "devDependencies": {
     "@sinclair/typebox": "^0.34.33",
     "@toridoriv/eslint-config": "github:toridoriv/eslint-config",
+    "@toridoriv/fs-plus": "github:toridoriv/fs-plus",
     "@types/node": "^22.15.29",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@vitest/coverage-v8": "^3.2.2",
