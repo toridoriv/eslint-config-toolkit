@@ -34,12 +34,13 @@
     "#typings": "./source/utils/typings.ts"
   },
   "scripts": {
-    "chmod": "find sbin -type f -not -name '*utils*' -not -name '*helpers*' -exec chmod +x {} \\;",
+    "chmod": "find sbin -type f -not -name '*utils*' -not -name '*helpers*' -not -name '*.md' -exec chmod +x {} \\;",
     "prebuild": "rm -rf lib && rm -rf bin",
     "build": "tsup",
     "test": "vitest",
     "test:coverage": "npm run test -- --coverage",
-    "deps:ignore": "scripty"
+    "deps:ignore": "scripty",
+    "generate:rule-types": "scripty"
   },
   "devDependencies": {
     "@sinclair/typebox": "^0.34.33",
