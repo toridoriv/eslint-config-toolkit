@@ -1,4 +1,4 @@
-#!/usr/bin/env node --experimental-transform-types --no-warnings=ExperimentalWarnings
+#!/usr/bin/env -S node --experimental-transform-types --no-warnings=ExperimentalWarnings
 // import { createRequire } from "node:module";
 // import { inspect } from "node:util";
 
