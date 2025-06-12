@@ -80,6 +80,38 @@ export function isWeakSet(value: unknown): value is AnyWeakSet {
 
 export type TypeOf = TypeOfPrimitive | "object" | "function" | "array" | "map" | "set" | "date" | "regexp" | "error";
 
+export type GetTypeOf<T> = T extends string
+  ? "string"
+  : T extends BigInt
+    ? "bigint"
+    : T extends number
+      ? "number"
+      : T extends boolean
+        ? "boolean"
+        : T extends symbol
+          ? "symbol"
+          : T extends null
+            ? "null"
+            : T extends undefined
+              ? "undefined"
+              : T extends AnyArray
+                ? "array"
+                : T extends AnyFunction
+                  ? "function"
+                  : T extends AnyMap
+                    ? "map"
+                    : T extends AnySet
+                      ? "set"
+                      : T extends Date
+                        ? "date"
+                        : T extends RegExp
+                          ? "regexp"
+                          : T extends Error
+                            ? "error"
+                            : T extends AnyObject
+                              ? "object"
+                              : never;
+
 export function typeOf(value: unknown): TypeOf {
   if (isArray(value)) return "array";
   if (!isNotNullable(value)) return "null";
@@ -91,9 +123,18 @@ export function typeOf(value: unknown): TypeOf {
 
   return typeof value;
 }
+
 type PrimitiveString = (typeof PRIMITIVES)[number];
 
 export type KindOf = "primitive" | Exclude<TypeOf, PrimitiveString>;
+
+export type GetKindOf<T> = GetTypeOf<T> extends TypeOfPrimitive ? "primitive" : Exclude<GetTypeOf<T>, TypeOfPrimitive>;
+
+export function kindOf<T>(value: T): GetKindOf<T> {
+  if (isPrimitive(value)) return "primitive" as GetKindOf<T>;
+
+  return typeOf(value) as GetKindOf<T>;
+}
 
 export function isArrowFunction(value: unknown): value is AnyFunction {
   return (
@@ -126,6 +167,7 @@ export interface Is {
   error: typeof isError;
   weakMap: typeof isWeakMap;
   weakSet: typeof isWeakSet;
+  kindOf: typeof kindOf;
 }
 
 /**
@@ -149,4 +191,5 @@ export const is: Is = {
   error: isError,
   weakMap: isWeakMap,
   weakSet: isWeakSet,
+  kindOf: kindOf,
 };

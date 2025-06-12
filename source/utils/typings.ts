@@ -10,9 +10,17 @@ export type Include<T, U> = T extends U ? T : never;
  */
 export type AnyFunction = (...args: any[]) => any;
 
-export type AnyMap = Map<any, any> | ReadonlyMap<any, any>;
+export type AnyMap = Map<any, any>;
 
-export type AnySet = Set<any> | ReadonlySet<any>;
+export type AnyReadonlyMap = ReadonlyMap<any, any>;
+
+export type AnyMapOrReadonlyMap = AnyMap | AnyReadonlyMap;
+
+export type AnySet = Set<any>;
+
+export type AnyReadonlySet = ReadonlySet<any>;
+
+export type AnySetOrReadonlySet = AnySet | AnyReadonlySet;
 
 export type AnyWeakMap = WeakMap<any, any>;
 
@@ -37,16 +45,6 @@ export type KeyOf<T> = {
 export type DeepPartial<T> = Expand<{
   [K in keyof T]?: T[K] extends AnyObject ? DeepPartial<T[K]> : T[K];
 }>;
-
-export type Merge<T extends AnyObject, U extends AnyObject> = Expand<{
-  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
-}>;
-
-/**
- * @module expand Utility types for simplifying TypeScript object types.
- *
- *                Tested with TypeScript v5.8.2.
- */
 
 /**
  * Represents a primitive data type in JavaScript.
@@ -87,7 +85,8 @@ export namespace Expand {
     | Map<any, any>
     | Primitive
     | ReadableStream<any>
-    | RegExp;
+    | RegExp
+    | Error;
 
   /**
    * Takes a type `T` and expands it into an object type with the same properties as `T`.
@@ -102,9 +101,11 @@ export namespace Expand {
       ? (...args: OneLevel<A, E>) => OneLevel<R, E>
       : T extends Promise<infer U>
         ? Promise<OneLevel<U, E>>
-        : T extends object
-          ? { [K in keyof T]: T[K] }
-          : T;
+        : T extends Set<infer SetType>
+          ? Set<OneLevel<SetType>>
+          : T extends object
+            ? { [K in keyof T]: T[K] }
+            : T;
 
   /**
    * Takes a type `T` and expands it into an object type with the same properties as `T`.
@@ -120,9 +121,11 @@ export namespace Expand {
       ? (...args: Recursive<A, E>) => Recursive<R, E>
       : T extends Promise<infer U>
         ? Promise<Recursive<U, E>>
-        : T extends object
-          ? { [K in keyof T]: Recursive<T[K], E> }
-          : T;
+        : T extends Set<infer SetType>
+          ? Set<Recursive<SetType>>
+          : T extends object
+            ? { [K in keyof T]: Recursive<T[K], E> }
+            : T;
 }
 
 export type WithProperty<T, K extends keyof T, V> = Expand<Omit<T, K> & { [P in K]: V }>;

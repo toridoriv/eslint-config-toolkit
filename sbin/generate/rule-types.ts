@@ -1,93 +1,157 @@
 #!/usr/bin/env -S node --experimental-transform-types --no-warnings=ExperimentalWarnings
-// import { createRequire } from "node:module";
-// import { inspect } from "node:util";
-
 import type { Rule } from "eslint";
+import { ESLint } from "eslint";
+import { compile, type JSONSchema } from "json-schema-to-typescript";
 
-import { importOrRequire } from "../utils.ts";
-// import { compile } from "json-schema-to-typescript";
+import { appendPeriodToText, capitalizeText, importOrRequire, is } from "../utils.ts";
 
-// type EslintRules = typeof import("../../node_modules/eslint/lib/rules/index.js");
-type RulesModule = {
-  name: string;
+type PluginRules = {
+  module: string;
+  id?: string | undefined;
   rules: Record<string, Rule.RuleModule>;
 };
+
+type RulesModule = Record<string, Rule.RuleModule>;
+type EslintRulesModule = Map<string, Rule.RuleModule>;
 
 type RuleInfo = {
   name: string;
   variable: string;
-  options: string[];
+  options: Record<string, string>;
   description: string;
   documentation: string;
 };
 
-const modules: RulesModule[] = await Promise.all([
-  getRulesModule("eslint"),
-  getRulesModule("@typescript-eslint/eslint-plugin"),
-]);
+const eslint = new ESLint({});
+const eslintPlugin = ["../node_modules/eslint/lib/rules/index.js", undefined] as [string, string | undefined];
+const plugins = [eslintPlugin].concat(
+  await getPlugins(
+    eslint,
+    ["js", "mjs", "cjs", "ts", "mts", "cts", "css", "html", "json", "jsonc", "yaml", "yml", "md"],
+    { "@typescript-eslint": "@typescript-eslint/eslint-plugin" },
+  ),
+);
 
-console.log(modules);
+const modules: PluginRules[] = await Promise.all(plugins.map((args) => getRulesModule(...args)));
+const rulesInfo: RuleInfo[] = (await Promise.all(modules.map(getRulesInfo))).flat();
 
-async function getRulesModule(name: string) {
-  const mod = await importOrRequire<{ rules: Record<string, Rule.RuleModule> }>(name);
+console.log(rulesInfo.slice(200));
 
-  console.log(mod);
+async function getRulesModule(name: string, id?: string): Promise<PluginRules> {
+  const mod = await importOrRequire<EslintRulesModule | { rules: RulesModule }>(name);
+  let rules: RulesModule;
+
+  if (mod instanceof Map) {
+    rules = Object.fromEntries(mod);
+  } else {
+    rules = mod.rules || {};
+  }
 
   return {
-    name,
-    rules: {},
-    // rules: (await importOrRequire<{ rules: Record<string, Rule.RuleModule> }>(name)).rules,
+    module: name,
+    id,
+    rules,
   };
 }
-// const require = createRequire(import.meta.url);
-// const eslintRules: EslintRules = require("../../node_modules/eslint/lib/rules/index.js");
-// const tsRules = require("@typescript-eslint/eslint-plugin").rules;
-// const rules = processModule(Object.fromEntries(eslintRules)).concat(processModule(tsRules, "@typescript-eslint"));
 
-function processModule({ name, rules }: RulesModule) {
+async function getPlugins(eslint: ESLint, extensions: string[], nameMap: Record<string, string>) {
+  const plugins = new Map<string, string>();
+
+  for (const extension of extensions) {
+    const config = await eslint.calculateConfigForFile(`sample.${extension}`);
+
+    if (!config) continue;
+
+    const names = Object.keys(config.plugins || {});
+
+    for (const name of names) {
+      if (name === "@") continue;
+
+      let importName = nameMap[name] || name;
+
+      if (!importName.startsWith("@")) {
+        importName = `eslint-plugin-${importName}`;
+      }
+
+      if (plugins.has(importName)) continue;
+
+      plugins.set(importName, name);
+    }
+  }
+
+  return Array.from(plugins);
+}
+
+async function getRulesInfo(pluginRules: PluginRules): Promise<RuleInfo[]> {
   const rulesInfo: RuleInfo[] = [];
 
-  for (const ruleName in rules) {
-    const rule = rules[ruleName];
+  for (const [ruleName, rule] of Object.entries(pluginRules.rules)) {
+    if (rule.meta?.deprecated) continue;
+
     const docs = rule.meta?.docs || {};
+
+    if (docs.description) {
+      docs.description = appendPeriodToText(docs.description);
+    }
+
     const info: RuleInfo = {
-      name: name === "eslint" ? ruleName : `${name}/${ruleName}`,
-      options: [],
+      name: pluginRules.id ? `${pluginRules.id}/${ruleName}` : ruleName,
+      options: {},
       description: docs.description || "",
       documentation: docs.url || "",
-      variable: "",
+      variable: toPascalCase(pluginRules.id ? `${pluginRules.id}/${ruleName}` : ruleName),
     };
 
-    info.variable = toPascalCase(info.name);
+    if (rule.meta?.schema) {
+      const schemas = Array.isArray(rule.meta.schema) ? rule.meta.schema : [rule.meta.schema];
 
-    console.log(info);
+      schemas.forEach(fixSchema);
+
+      for (let i = 0; i < schemas.length; i++) {
+        const schema = schemas[i];
+        const typeName = schemas.length > 1 ? `${info.variable}${i + 1}` : info.variable;
+        const type = await compile(schema, typeName, { bannerComment: "" });
+
+        info.options[typeName] = type;
+      }
+    }
+
+    rulesInfo.push(info);
   }
 
   return rulesInfo;
 }
 
 function toPascalCase(text: string) {
-  return text.replace(/(-|\/|@)\w/g, toUppercase).replaceAll(/-|\/|@/g, "");
+  const parts = text.replaceAll("@", "").replaceAll("/", "-").split("-");
+
+  return parts.map(capitalizeText).join("");
 }
 
-function toUppercase(text: string) {
-  return text.toUpperCase();
+function fixSchema(schema: JSONSchema): JSONSchema {
+  // schema.definitions = schema.definitions || schema.$defs;
+
+  fixReferences(schema);
+
+  return schema;
 }
 
-// const rulesModule = require("../../node_modules/eslint/lib/rules/index.js");
-// const rules = [...rulesModule.entries()];
-// const schema = rulesModule.get("no-console").meta.schema[0];
-// const compiled = await compile(schema, "NoConsoleOptions");
+function fixReferences<T extends object>(obj: T): T {
+  if (!is.object(obj)) return obj;
 
-// console.log(schema);
-// console.log(compiled);
-// // for (const [rule, info] of rules.slice(0, 10)) {
-// //   if ("defaultOptions" in info.meta) {
-// //     console.log(rule);
-// //     console.log(info.meta.schema);
-// //   }
-// // }
+  for (const key in obj) {
+    const value = obj[key];
 
-// // function getRuleJsdoc(meta: object) {
-// //   // const { defaultOption}
-// // }
+    if (is.object(value)) {
+      obj[key] = fixReferences(value);
+    } else if (is.array(value)) {
+      // @ts-ignore
+      obj[key] = value.map(fixReferences);
+    } else if (key === "$ref" && typeof value === "string") {
+      // @ts-ignore
+      obj[key] = value.replaceAll("#/items/0/$defs", "#/$defs");
+    }
+  }
+
+  return obj;
+}

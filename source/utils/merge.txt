@@ -1,0 +1,187 @@
+import { is, KindOf, TypeOf, TypeOfPrimitive } from "#predicates";
+import type { AnyArray, AnyMap, AnyObject, AnySet, Expand, KeyOf } from "#typings";
+
+import { clone } from "./clone.ts";
+import { defineValue } from "./properties.ts";
+import { getUnique } from "./transform.ts";
+
+export type Merge<T extends AnyObject, U extends AnyObject> = Expand<{
+  [K in keyof T | keyof U]: K extends keyof U ? U[K] : K extends keyof T ? T[K] : never;
+}>;
+
+// export type MergeArray<T extends AnyArray, U extends AnyArray, S extends MergeStrategy> = S extends "replace" ?
+
+export type MergeStrategy = "replace" | "merge";
+
+export type MergeableKindOf = "array" | "map" | "set" | "object";
+
+export type MergeOptions = {
+  /**
+   * Strategy for merging arrays. When both objects have an array at the same key, this option determines how to handle
+   * the merge.
+   * - **replace:** The array from the second object replaces the array from the first object.
+   * - **merge:** The arrays from both objects are concatenated.
+   *
+   * @default merge
+   */
+  array?: MergeStrategy;
+  /**
+   * Strategy for merging maps. When both objects have a map at the same key, this option determines how to handle the
+   * merge.
+   * - **replace:** The map from the second object replaces the map from the first object.
+   * - **merge:** The maps from both objects are merged recursively. If a key exists in both maps, the value from the
+   * second map will be used.
+   *
+   * @default merge
+   */
+  map?: MergeStrategy;
+  /**
+   * Strategy for merging sets. When both objects have a set at the same key, this option determines how to handle the
+   * merge.
+   * - **replace:** The set from the second object replaces the set from the first object.
+   * - **merge:** The sets from both objects are merged. If a value exists in both sets, it will be included only once.
+   *
+   * @default merge
+   */
+  set?: MergeStrategy;
+};
+
+merge.STRATEGY_BY_TYPE = Object.freeze({
+  primitive: "replace",
+  object: "merge",
+  array: "merge",
+  map: "merge",
+  set: "merge",
+  date: "replace",
+  regexp: "replace",
+  error: "replace",
+  function: "replace",
+});
+
+merge.MERGEABLE = Object.freeze<KindOf[]>(["array", "map", "set", "object"]);
+
+export function merge<T extends AnyObject, U extends AnyObject>(a: T, b: U, options: MergeOptions = {}) {
+  if (!is.object(a) || !is.object(b)) {
+    throw new TypeError("Both arguments must be objects.");
+  }
+
+  const result = {} as any;
+  const strategies = { ...merge.STRATEGY_BY_TYPE, ...options };
+  const keys = getUnique<(KeyOf<T> | KeyOf<U>)[]>(Object.keys(a).concat(Object.keys(b)));
+
+  for (const key of keys) {
+    const definitionA = toDefinition(a[key]);
+    const definitionB = toDefinition(b[key]);
+
+    if (!areMergeable(definitionA, definitionB)) {
+      result[key] = clone(getDefinedOrLast(definitionA.data, definitionB.data));
+
+      continue;
+    }
+
+    const fn = merge[definitionA.kind as MergeableKindOf];
+
+    // result[key] = de
+    // const defined = [valueB, valueA].find(is.defined);
+    // const type = (is.primitive(defined) ? "primitive" : is.typeOf(defined)) as
+    //   | "primitive"
+    //   | Exclude<TypeOf, TypeOfPrimitive>;
+    // const strategy = strategies[type];
+  }
+}
+
+export function getDefinedOrLast<T extends AnyArray>(...values: T): T[number] {
+  const found = values.findLastIndex(is.defined);
+
+  return found !== -1 ? values[found] : values[values.length - 1];
+}
+
+type ValueDefinition<T> = {
+  data: T;
+  kind: KindOf;
+};
+
+type AnyValueDefinition = ValueDefinition<any>;
+
+function areMergeable<T extends AnyValueDefinition, U extends AnyValueDefinition>(a: T, b: U) {
+  if (a.kind !== b.kind) return false;
+
+  return merge.MERGEABLE.includes(a.kind);
+}
+
+function toDefinition<T>(data: T): ValueDefinition<T> {
+  return {
+    data,
+    kind: is.kindOf(data),
+  };
+}
+
+merge.array = function mergeArray<A extends AnyArray, B extends AnyArray, Strategy extends MergeStrategy>(
+  a: A,
+  b: B,
+  strategy: Strategy,
+): MergeResult<A, B, Strategy> {
+  if (!is.array(a) || !is.array(b)) {
+    throw new TypeError("Both arguments must be arrays.");
+  }
+
+  if (strategy === "replace") {
+    return b as MergeResult<A, B, Strategy>;
+  }
+
+  return a.concat(b) as MergeResult<A, B, Strategy>;
+};
+
+type MergeResult<A, B, Strategy extends MergeStrategy> = Strategy extends "replace" ? B : A & B;
+
+merge.map = function mergeMap<A extends AnyMap, B extends AnyMap, Strategy extends MergeStrategy>(
+  a: A,
+  b: B,
+  strategy: Strategy,
+): MergeResult<A, B, Strategy> {
+  if (!is.map(a) || !is.map(b)) {
+    throw new TypeError("Both arguments must be maps.");
+  }
+
+  let result: AnyMap;
+
+  if (strategy === "replace") {
+    result = clone(b);
+  } else {
+    result = clone(a);
+
+    for (const [key, value] of b) {
+      result.set(key, value);
+    }
+  }
+
+  return result as MergeResult<A, B, Strategy>;
+};
+
+merge.set = function mergeSet<A extends AnySet, B extends AnySet, Strategy extends MergeStrategy>(
+  a: A,
+  b: B,
+  strategy: Strategy,
+): MergeResult<A, B, Strategy> {
+  if (!is.set(a) || !is.set(b)) {
+    throw new TypeError("Both arguments must be sets.");
+  }
+
+  let result: AnySet;
+
+  if (strategy === "replace") {
+    result = clone(b);
+  } else {
+    result = clone(a);
+
+    for (const value of b) {
+      result.add(value);
+    }
+  }
+
+  return result as MergeResult<A, B, Strategy>;
+};
+
+merge.object = function mergeObject<A extends AnyObject, B extends AnyObject>(a: A, b: B, options?: MergeOptions) {
+  return merge(a, b, options);
+};

@@ -9,5 +9,6 @@ export default defineConfig({
       include: ["source/**"],
     },
     watch: false,
+    reporters: ["verbose"],
   },
 });

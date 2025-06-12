@@ -1,5 +1,6 @@
 import { includes, is, typeOf } from "#predicates";
-import { coerce, WithProperty } from "#typings";
+import type { WithProperty } from "#typings";
+import { coerce } from "#typings";
 
 defineValue.ALLOWED_TYPES = Object.freeze(["object", "function"] as const);
 
