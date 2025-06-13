@@ -5,6 +5,8 @@ export default defineConfig({
     coverage: {
       clean: true,
       enabled: false,
+      cleanOnRerun: true,
+      include: ["source/**"],
     },
     watch: false,
   },
