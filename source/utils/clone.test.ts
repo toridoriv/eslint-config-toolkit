@@ -243,8 +243,14 @@ describe("clone()", () => {
     it("returns an error with the same stack trace", () => {
       const error = new Error("Test error");
       const cloned = clone(error);
+      const errorWithoutStack = new Error("Test error");
+
+      delete errorWithoutStack.stack;
+
+      const clonedWithoutStack = clone(errorWithoutStack);
 
       expect(cloned.stack).to.equal(error.stack);
+      expect(clonedWithoutStack.stack).to.equal(errorWithoutStack.stack);
     });
 
     it("returns an error with the same prototype", () => {
@@ -252,6 +258,20 @@ describe("clone()", () => {
       const cloned = clone(error);
 
       expect(cloned).to.be.instanceOf(TypeError);
+    });
+
+    it("returns an error with the same properties", () => {
+      const error = new AggregateError([new Error("Test error 1"), new Error("Test error 2")]);
+      const cloned = clone(error);
+
+      expect(cloned.errors).to.deep.equal(error.errors);
+    });
+
+    it("returns an error with the same name", () => {
+      const error = new TypeError("Test error");
+      const cloned = clone(error);
+
+      expect(cloned.name).to.equal(error.name);
     });
   });
 });

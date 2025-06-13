@@ -211,12 +211,14 @@ clone.error = function cloneError<T extends Error>(error: T): T {
     });
   }
 
-  const clonedError = new (error.constructor as any)(error.message, error.cause);
+  const clonedError = Object.create(error.constructor.prototype, Object.getOwnPropertyDescriptors(error));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { set, get, ...stackDescriptor } = Object.getOwnPropertyDescriptor(error, "stack") || {};
 
-  clonedError.name = error.name;
-  clonedError.stack = error.stack;
-
-  Object.setPrototypeOf(clonedError, Object.getPrototypeOf(error));
+  Object.defineProperty(clonedError, "stack", {
+    ...stackDescriptor,
+    value: error.stack,
+  });
 
   return clone.object(error, clonedError);
 };
