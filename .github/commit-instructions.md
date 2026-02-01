@@ -4,6 +4,30 @@ Generate a commit message that follows the gitmoji configuration under the `Conf
 
 ### Configuration
 
+Use the format `<intention> [scope]: <message>`, where:
+
+- `<intention>` is an emoji from the Gitmoji specification that best describes the intention of the commit.
+- `[scope]` is an optional scope that provides additional context about the commit (e.g., deps, ui, core, etc.). If included, it should be enclosed in parentheses and followed by a colon and a space.
+- `<message>` is a brief description of the changes made in the commit.
+
+If the change is updating a dependency or a development dependency, follow the format:
+
+- ⬆️ Bump <dependency_name> from version <old_version> to <new_version>
+- ⬆️ (development): Bump <dependency_name> from version <old_version> to <new_version>
+
+If the change is downgrading a dependency or a development dependency, follow the format:
+
+- ⬇️ Downgrade <dependency_name> from version <old_version> to <new_version>
+- ⬇️ (development): Downgrade <dependency_name> from version <old_version> to <new_version>
+
+If the change affects configuration files related to runtimes (e.g., `.tool-versions`, `.nvmrc`, `.node-version`, etc.), follow the format:
+
+- 📌 Set <runtime_name> to version <version>
+
+**IMPORTANT:** in `<old_version>` and `<new_version>`, make sure to remove the version range specifiers (e.g., ^, ~, >=, etc.) and only include the raw version numbers.
+
+Pick the most appropriate emoji using the following list:
+
 ```json
 {
   "$schema": "https://gitmoji.dev/api/gitmojis/schema",
@@ -606,12 +630,10 @@ Generate a commit message that follows the gitmoji configuration under the `Conf
 
 ### Examples
 
-**NOTE:** Imitate the format of the examples below, taking into consideration only what's inside each code block. The format should be:
-
-<intention> [scope?][:?] <message>
+**NOTE:** Imitate the format of the examples below, taking into consideration only what's inside each code block.
 
 ```markdown
-🐛 (utils:clone) Fix error cloning to preserve stack and properties
+🐛 (utils:clone): Fix error cloning to preserve stack and properties
 The previous implementation of `clone.error` was not correctly preserving the properties of the original error. This commit fixes the issue by:
 
 - Using `Object.create` and `Object.getOwnPropertyDescriptors` to create a new error object with the same prototype and properties as the original.
@@ -619,17 +641,25 @@ The previous implementation of `clone.error` was not correctly preserving the pr
 ```
 
 ```markdown
-♻️ (utils:schema) Enhance schema builder with parse method and exclusion logic
+♻️ (utils:schema): Enhance schema builder with parse method and exclusion logic
 ```
 
 ```markdown
-➕ Use Vitest instead of the native test runner
+➕ (development): Use vitest instead of the native test runner
 ```
 
 ```markdown
-⬆️ (development) Bump tsup from 8.4.0 to 8.5.0
+⬆️ (development): Bump tsup from 8.4.0 to 8.5.0
 ```
 
 ```markdown
-⬆️ (development) Bump TypeScript from 5.9.0-dev.20250523 to 5.9.0-dev.20250602
+⬆️ Bump eslint from 9.28.0 to 9.29.0
+```
+
+```markdown
+➖ (development): Remove unused dependency lodash
+```
+
+```markdown
+➖ Remove unused dependency express
 ```
