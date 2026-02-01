@@ -13,12 +13,12 @@ Use the format `<intention> [scope]: <message>`, where:
 If the change is updating a dependency or a development dependency, follow the format:
 
 - ⬆️ Bump <dependency_name> from version <old_version> to <new_version>
-- ⬆️ (development): Bump <dependency_name> from version <old_version> to <new_version>
+- ⬆️ (development) Bump <dependency_name> from version <old_version> to <new_version>
 
 If the change is downgrading a dependency or a development dependency, follow the format:
 
 - ⬇️ Downgrade <dependency_name> from version <old_version> to <new_version>
-- ⬇️ (development): Downgrade <dependency_name> from version <old_version> to <new_version>
+- ⬇️ (development) Downgrade <dependency_name> from version <old_version> to <new_version>
 
 If the change affects configuration files related to runtimes (e.g., `.tool-versions`, `.nvmrc`, `.node-version`, etc.), follow the format:
 
@@ -633,7 +633,7 @@ Pick the most appropriate emoji using the following list:
 **NOTE:** Imitate the format of the examples below, taking into consideration only what's inside each code block.
 
 ```markdown
-🐛 (utils:clone): Fix error cloning to preserve stack and properties
+🐛 (utils:clone) Fix error cloning to preserve stack and properties
 The previous implementation of `clone.error` was not correctly preserving the properties of the original error. This commit fixes the issue by:
 
 - Using `Object.create` and `Object.getOwnPropertyDescriptors` to create a new error object with the same prototype and properties as the original.
@@ -641,15 +641,15 @@ The previous implementation of `clone.error` was not correctly preserving the pr
 ```
 
 ```markdown
-♻️ (utils:schema): Enhance schema builder with parse method and exclusion logic
+♻️ (utils:schema) Enhance schema builder with parse method and exclusion logic
 ```
 
 ```markdown
-➕ (development): Use vitest instead of the native test runner
+➕ (development) Use vitest instead of the native test runner
 ```
 
 ```markdown
-⬆️ (development): Bump tsup from 8.4.0 to 8.5.0
+⬆️ (development) Bump tsup from 8.4.0 to 8.5.0
 ```
 
 ```markdown
@@ -657,7 +657,7 @@ The previous implementation of `clone.error` was not correctly preserving the pr
 ```
 
 ```markdown
-➖ (development): Remove unused dependency lodash
+➖ (development) Remove unused dependency lodash
 ```
 
 ```markdown
