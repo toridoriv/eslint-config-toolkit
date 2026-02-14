@@ -54,7 +54,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.4.1",
     "json-schema-to-typescript": "^15.0.4",
-    "prettier": "^3.5.3",
+    "prettier": "^3.8.1",
     "scripty": "github:toridoriv/scripty",
     "tsup": "^8.5.0",
     "typescript": "^5.9.0-dev.20250602",
