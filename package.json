@@ -46,7 +46,7 @@
     "@sinclair/typebox": "^0.34.33",
     "@toridoriv/eslint-config": "github:toridoriv/eslint-config",
     "@toridoriv/fs-plus": "github:toridoriv/fs-plus",
-    "@types/node": "^24.10.9",
+    "@types/node": "^24.10.13",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "@vitest/coverage-v8": "^3.2.2",
